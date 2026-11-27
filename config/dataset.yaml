@@ -1,0 +1,13 @@
+# Phase 2: 数据集生成默认配置（DatasetGenerator）
+# 所有值均可在 DatasetGenerator.generate(...) 中以参数覆盖。
+dataset:
+  method: lhs              # 采样方法: random | lhs | sobol
+  seed: 42                 # 随机种子（None → 系统随机）
+  output_dir: E:/workbuddy/AI-UAV/data/datasets   # YAML/JSON 导出目录
+  formats: [yaml, json, csv]  # 输出格式；SQLite 恒由批分析单写者写入（无需配置）
+  keep_invalid: false      # 是否保留校验未通过(error 级)的样本入库
+  max_workers: 8           # 并行 worker 数（0/负/缺省 → 自动 min(8, cpu)）
+  # Phase 2.5 C1: 可行性预筛（外部工具分析前运行，阈值见 config/prefilter.yaml）
+  prefilter:
+    enabled: true          # 是否在正式采样后、外部工具前运行预筛（false 可关闭）
+    record_rejected: true  # 预筛拒绝样本是否记录到 SQLite + JSON（不丢弃）

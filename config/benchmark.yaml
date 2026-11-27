@@ -1,0 +1,11 @@
+# Phase 2: Benchmark 默认配置（BenchmarkRunner）
+# 所有值均可在 BenchmarkRunner.run(...) 中以参数覆盖。
+benchmark:
+  n: 1000                 # 基准样本规模
+  method: lhs             # 采样方法: random | lhs | sobol
+  seed: 42                # 随机种子（None → 系统随机）
+  max_workers: 8          # 并行 worker 数（0/负/缺省 → 自动 min(8, cpu)）
+  output_dir: E:/workbuddy/AI-UAV/data/datasets   # 数据集 YAML/JSON 输出目录
+  report_dir: E:/workbuddy/AI-UAV/reports/benchmark  # 报告与图输出目录
+  figure_dpi: 110         # 图分辨率
+  min_corr_samples: 30    # 相关性矩阵最少有效样本数（不足则跳过）

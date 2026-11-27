@@ -1,0 +1,111 @@
+// OpenVSP 模型生成模板 — 仅含 OpenVSP API 调用，无业务逻辑
+// 由 Python (src/openvsp/adapter.py) 渲染，参数来自 Aircraft 对象
+// 坐标系: X 向后, Y 右展, Z 上; 原点=机身头部
+// include_body: true  → 完整模型(机身+整流罩, 供 vspviewer/STL 展示)
+//                false → 仅升力面(供 VSPAero; POD 薄面体伪尾涡会污染求解)
+int main()
+{
+{% if include_body %}
+    //==================== 机身 (POD) ====================//
+    string fuse_id = AddGeom( "POD", "" );
+    SetGeomName( fuse_id, "Fuselage" );
+    SetParmVal( fuse_id, "Length", "Design", {{ fuselage.length_m }} );
+    SetParmVal( fuse_id, "X_Rel_Location", "XForm", 0.0 );
+    Update();
+
+    //==================== 螺旋桨整流罩 (POD, 仅展示模型) ====================//
+    string spin_id = AddGeom( "POD", "" );
+    SetGeomName( spin_id, "Spinner" );
+    SetParmVal( spin_id, "Length", "Design", {{ spinner_len }} );
+    SetParmVal( spin_id, "X_Rel_Location", "XForm", {{ spinner_x }} );
+    Update();
+{% endif %}
+
+    //==================== 主机翼 (WING, 2段) ====================//
+    string wing_id = AddGeom( "WING", "" );
+    SetGeomName( wing_id, "MainWing" );
+    SetDriverGroup( wing_id, 1, AREA_WSECT_DRIVER, ROOTC_WSECT_DRIVER, TIPC_WSECT_DRIVER );
+    SetParmVal( wing_id, "Root_Chord", "XSec_1", {{ wing_root_chord }} );
+    SetParmVal( wing_id, "Tip_Chord", "XSec_1", {{ wing_tip_chord }} );
+    SetParmVal( wing_id, "Area", "XSec_1", {{ wing_half_area }} );   // 半翼面积(镜像)
+    SetParmVal( wing_id, "Sweep", "XSec_1", {{ wing_sweep }} );
+    SetParmVal( wing_id, "Dihedral", "XSec_1", {{ wing_dihedral }} );
+    SetParmVal( wing_id, "Twist", "XSec_1", {{ wing_twist }} );
+    SetParmVal( wing_id, "X_Rel_Location", "XForm", {{ wing_x }} );
+
+    // 主翼型: UIUC .dat 直接读取
+    string w_xsurf = GetXSecSurf( wing_id, 0 );
+    ChangeXSecShape( w_xsurf, 0, XS_FILE_AIRFOIL );
+    ReadFileAirfoil( GetXSec( w_xsurf, 0 ), "{{ wing_af_root }}" );
+    ChangeXSecShape( w_xsurf, 1, XS_FILE_AIRFOIL );
+    ReadFileAirfoil( GetXSec( w_xsurf, 1 ), "{{ wing_af_tip }}" );
+
+    SetParmVal( wing_id, "Tess_W", "Shape", 41 );
+    string w_xs1 = GetXSec( w_xsurf, 1 );
+    SetParmVal( GetXSecParm( w_xs1, "SectTess_U" ), 12 );
+    Update();
+
+    //==================== 平尾 (WING, 镜像) ====================//
+    string htail_id = AddGeom( "WING", "" );
+    SetGeomName( htail_id, "HTail" );
+    SetDriverGroup( htail_id, 1, AREA_WSECT_DRIVER, ROOTC_WSECT_DRIVER, TIPC_WSECT_DRIVER );
+    SetParmVal( htail_id, "Root_Chord", "XSec_1", {{ h_root_chord }} );
+    SetParmVal( htail_id, "Tip_Chord", "XSec_1", {{ h_tip_chord }} );
+    SetParmVal( htail_id, "Area", "XSec_1", {{ h_half_area }} );
+    SetParmVal( htail_id, "Sweep", "XSec_1", {{ h_sweep }} );
+    SetParmVal( htail_id, "Dihedral", "XSec_1", 0.0 );
+    SetParmVal( htail_id, "Twist", "XSec_1", 0.0 );
+    SetParmVal( htail_id, "X_Rel_Location", "XForm", {{ h_x }} );
+    SetParmVal( htail_id, "Y_Rel_Location", "XForm", 0.0 );
+    SetParmVal( htail_id, "Z_Rel_Location", "XForm", {{ h_z }} );
+
+    string h_xsurf = GetXSecSurf( htail_id, 0 );
+    ChangeXSecShape( h_xsurf, 0, XS_FILE_AIRFOIL );
+    ReadFileAirfoil( GetXSec( h_xsurf, 0 ), "{{ tail_af }}" );
+    ChangeXSecShape( h_xsurf, 1, XS_FILE_AIRFOIL );
+    ReadFileAirfoil( GetXSec( h_xsurf, 1 ), "{{ tail_af }}" );
+
+    SetParmVal( htail_id, "Tess_W", "Shape", 21 );
+    Update();
+
+    //==================== 垂尾 (WING, 旋转90°, 无镜像) ====================//
+    string vtail_id = AddGeom( "WING", "" );
+    SetGeomName( vtail_id, "VTail" );
+    SetParmVal( FindParm( vtail_id, "Sym_Planar_Flag", "Sym" ), 0.0 );
+    SetDriverGroup( vtail_id, 1, AREA_WSECT_DRIVER, ROOTC_WSECT_DRIVER, TIPC_WSECT_DRIVER );
+    SetParmVal( vtail_id, "Root_Chord", "XSec_1", {{ v_root_chord }} );
+    SetParmVal( vtail_id, "Tip_Chord", "XSec_1", {{ v_tip_chord }} );
+    SetParmVal( vtail_id, "Area", "XSec_1", {{ v_area }} );          // 单片全面积
+    SetParmVal( vtail_id, "Sweep", "XSec_1", {{ v_sweep }} );
+    SetParmVal( vtail_id, "Dihedral", "XSec_1", 0.0 );
+    SetParmVal( vtail_id, "Twist", "XSec_1", 0.0 );
+    SetParmVal( vtail_id, "X_Rel_Location", "XForm", {{ v_x }} );
+    SetParmVal( vtail_id, "Y_Rel_Location", "XForm", 0.0 );
+    SetParmVal( vtail_id, "Z_Rel_Location", "XForm", {{ v_z_root }} );
+    SetParmVal( vtail_id, "X_Rel_Rotation", "XForm", 90.0 );          // 翼展方向转垂直
+
+    string v_xsurf = GetXSecSurf( vtail_id, 0 );
+    ChangeXSecShape( v_xsurf, 0, XS_FILE_AIRFOIL );
+    ReadFileAirfoil( GetXSec( v_xsurf, 0 ), "{{ tail_af }}" );
+    ChangeXSecShape( v_xsurf, 1, XS_FILE_AIRFOIL );
+    ReadFileAirfoil( GetXSec( v_xsurf, 1 ), "{{ tail_af }}" );
+
+    SetParmVal( vtail_id, "Tess_W", "Shape", 21 );
+    Update();
+
+    //==================== 导出 ====================//
+    WriteVSPFile( "{{ vsp3_path }}", SET_ALL );
+
+{% if stl_path %}
+    ExportFile( "{{ stl_path }}", SET_ALL, EXPORT_STL );
+    Print( "UAVDP_STL_DONE\n" );
+{% endif %}
+    //==================== 错误汇报 ====================//
+    while ( GetNumTotalErrors() > 0 )
+    {
+        ErrorObj err = PopLastError();
+        Print( err.GetErrorString() );
+    }
+    Print( "UAVDP_BUILD_DONE\n" );
+    return 0;
+}

@@ -1,0 +1,43 @@
+# 任务需求
+mission:
+  mission_name: demo_5kg_200km
+  range_km: 200
+  cruise_speed_ms: 30
+  payload_kg: 5
+  mtow_kg: null            # null → 由重量迭代估算
+  endurance_h: 2.0
+  altitude_m: 500
+  stall_speed_max_ms: null
+  static_margin_min: 0.05
+  static_margin_max: 0.15
+  climb_rate_min_ms: 2.0
+
+# 设计变量(初值)
+design:
+  aspect_ratio: 9.0
+  taper_ratio: 0.55
+  airfoil_root: clarky
+  airfoil_tip: clarky
+  htail_volume_coeff: 0.55
+  vtail_volume_coeff: 0.042
+  htail_aspect_ratio: 4.2
+  vtail_aspect_ratio: 1.8
+
+# 外部工具路径(按本机安装位置)
+tools:
+  openvsp_script: C:/OpenVSP-3.55.0-win64/vspscript.exe
+  xfoil: C:/Xfoil/xfoil.exe
+  uiuc_db_dir: E:/workbuddy/AI-UAV/uiuc/coord_seligFmt
+
+# 分析设置
+analysis:
+  alpha_start_deg: -4.0
+  alpha_end_deg: 14.0
+  alpha_npts: 7
+  mach: 0.10
+  ncpu: 4
+  wake_iterations: 3
+  xfoil_alpha_start: -4.0
+  xfoil_alpha_step: 1.0
+  xfoil_alpha_end: 12.0
+  xfoil_max_iter: 100

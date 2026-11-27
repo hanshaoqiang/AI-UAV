@@ -1,0 +1,73 @@
+// VSPAero 整机气动扫描模板 — 由 Python (src/vspaero/adapter.py) 渲染
+// 仅含 OpenVSP/VSPAero API 调用; 读入已有 vsp3, 运行 alpha 扫描
+int main()
+{
+    ReadVSPFile( "{{ vsp3_path }}" );
+    Update();
+
+    //==== ComputeGeometry: 全部薄面元(涡格) ====//
+    SetAnalysisInputDefaults( "VSPAEROComputeGeometry" );
+    array< int > thick_set = GetIntAnalysisInput( "VSPAEROComputeGeometry", "GeomSet" );
+    array< int > thin_set = GetIntAnalysisInput( "VSPAEROComputeGeometry", "ThinGeomSet" );
+    thick_set[0] = ( SET_TYPE::SET_NONE );
+    thin_set[0] = ( SET_TYPE::SET_ALL );
+    SetIntAnalysisInput( "VSPAEROComputeGeometry", "GeomSet", thick_set );
+    SetIntAnalysisInput( "VSPAEROComputeGeometry", "ThinGeomSet", thin_set );
+    ExecAnalysis( "VSPAEROComputeGeometry" );
+
+    //==== VSPAEROSweep: alpha 扫描 ====//
+    string an = "VSPAEROSweep";
+    SetAnalysisInputDefaults( an );
+
+    array< int > geom_set;
+    geom_set.push_back( 0 );
+    SetIntAnalysisInput( an, "GeomSet", geom_set, 0 );
+
+    array< int > ref_flag;
+    ref_flag.push_back( 1 );                        // 以主机翼为参考
+    SetIntAnalysisInput( an, "RefFlag", ref_flag, 0 );
+
+    array< string > wids = FindGeomsWithName( "MainWing" );
+    SetStringAnalysisInput( an, "WingID", wids, 0 );
+
+    // 力矩参考点(重心)
+    array< double > xcg; xcg.push_back( {{ xcg }} );
+    SetDoubleAnalysisInput( an, "Xcg", xcg, 0 );
+    array< double > ycg; ycg.push_back( 0.0 );
+    SetDoubleAnalysisInput( an, "Ycg", ycg, 0 );
+    array< double > zcg; zcg.push_back( 0.0 );
+    SetDoubleAnalysisInput( an, "Zcg", zcg, 0 );
+
+    // alpha 扫描
+    array< double > a0; a0.push_back( {{ alpha_start }} );
+    SetDoubleAnalysisInput( an, "AlphaStart", a0, 0 );
+    array< double > a1; a1.push_back( {{ alpha_end }} );
+    SetDoubleAnalysisInput( an, "AlphaEnd", a1, 0 );
+    array< int > anpts; anpts.push_back( {{ alpha_npts }} );
+    SetIntAnalysisInput( an, "AlphaNpts", anpts, 0 );
+
+    // 马赫数(不可压近似)
+    array< double > m0; m0.push_back( {{ mach }} );
+    SetDoubleAnalysisInput( an, "MachStart", m0, 0 );
+    SetDoubleAnalysisInput( an, "MachEnd", m0, 0 );
+    array< int > mnpts; mnpts.push_back( 1 );
+    SetIntAnalysisInput( an, "MachNpts", mnpts, 0 );
+
+    // 数值设置
+    array< int > ncpu; ncpu.push_back( {{ ncpu }} );
+    SetIntAnalysisInput( an, "NCPU", ncpu, 0 );
+    array< int > wnit; wnit.push_back( {{ wake_iter }} );
+    SetIntAnalysisInput( an, "WakeNumIter", wnit, 0 );
+
+    Update();
+    ExecAnalysis( an );
+    Print( "UAVDP_SWEEP_DONE\n" );
+
+    //==== 错误汇报 ====//
+    while ( GetNumTotalErrors() > 0 )
+    {
+        ErrorObj err = PopLastError();
+        Print( err.GetErrorString() );
+    }
+    return 0;
+}

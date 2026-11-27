@@ -1,0 +1,45 @@
+# DataValidator 校验阈值（Phase 2，禁止硬编码）
+#
+# 严重级别在代码中定义：
+#   error   = 物理异常样本（NaN / 负值 / 不可行几何 / 静不稳定 / 无推力等）→ 过滤
+#   warning = 未达任务约束（航程/续航/失速/爬升低于目标）→ 标记但不过滤
+#
+# 阈值均可按需调整，无需改动代码。
+
+geometry:                    # 几何可行性
+  span_m_min: 0.5            # 最小翼展 [m]
+  aspect_ratio: [4.0, 20.0]  # 展弦比
+  taper_ratio: [0.2, 1.0]    # 锥比
+  htail_area_ratio: [0.10, 0.35]  # 平尾/机翼面积比
+  vtail_area_ratio: [0.03, 0.35]  # 垂尾/机翼面积比
+  vh: [0.30, 0.80]           # 平尾容量系数
+  vv: [0.02, 0.08]           # 垂尾容量系数
+  tail_arm_m_min: 0.2        # 最小尾臂 [m]
+  fuselage_fineness: [4.0, 12.0]  # 机身长径比
+  wing_loading_kgm2_min: 3.0 # 最小翼载 [kg/m²]
+
+weight:                      # 重量合理性
+  mtow_kg: [0.5, 5000.0]     # 最大起飞重量范围 [kg]
+  empty_mass_fraction: [0.10, 0.80]   # 空重比
+  battery_mass_fraction_max: 0.60     # 电池质量占比上限
+  payload_fraction_max: 0.60          # 载荷占比上限
+
+stability:                   # 静稳定性
+  static_margin: [0.0, 0.40]          # 静稳定裕度
+  cm_alpha_per_rad_max: 0.0           # 俯仰力矩斜率须为负(静稳定)
+
+propulsion:                  # 推进能力
+  thrust_weight_ratio_min: 0.08       # 最小推重比
+  excess_power_w_min: 0.0             # 最小剩余功率 [W]
+  propeller_efficiency: [0.1, 1.0]    # 螺旋桨效率
+  motor_efficiency: [0.5, 1.0]        # 电机效率
+
+aerodynamics:                # 气动合理性
+  ld_cruise_min: 1.0         # 最小巡航升阻比
+  ld_max: [3.0, 60.0]        # 最大升阻比
+  cl_max: [0.4, 1.8]         # 最大升力系数
+  cl_alpha_per_rad_min: 1.0  # 升力线斜率下限 [1/rad]
+
+range:                       # 航程约束（warning：相对任务目标的比例）
+  range_ratio_min: 1.0       # 航程 / 任务航程 下限
+  endurance_ratio_min: 1.0   # 续航 / 任务续航 下限

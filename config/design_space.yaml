@@ -1,0 +1,114 @@
+# Design Space 定义（Phase 2）
+# 所有设计变量均可在此配置，禁止硬编码。
+#
+# 结构：
+#   continuous: { 变量名: {lo, hi, [log_scale]} }   连续区间变量
+#   discrete:   { 变量名: [取值列表] }               离散变量
+#
+# 说明：
+#   - 机翼后掠 wing_sweep_deg 为 1/4 弦线后掠（与 OpenVSP "Sweep" 一致）；
+#     前缘/后缘后掠由「1/4 弦后掠 + 锥比 + 展弦比」唯一确定，为派生量。
+#   - 根弦/梢弦由「面积(翼载约束) + 展弦比 + 锥比」唯一确定，为派生量。
+#   - 翼型取自 UIUC 精选白名单（收敛稳定，XFOIL/VSPAero 友好）。
+
+version: 2.0
+
+continuous:
+  # ---- Mission ----
+  range_km:            {lo: 50.0,  hi: 300.0}
+  cruise_speed_ms:     {lo: 18.0,  hi: 40.0}
+  payload_kg:          {lo: 0.5,   hi: 10.0}
+  endurance_h:         {lo: 1.0,   hi: 2.5}      # 电推进(220Wh/kg)物理上限约 2.5h
+  altitude_m:          {lo: 100.0, hi: 2000.0}
+  # ---- 机翼 ----
+  aspect_ratio:        {lo: 6.5,   hi: 14.0}
+  taper_ratio:         {lo: 0.4,   hi: 0.8}
+  wing_sweep_deg:      {lo: 0.0,   hi: 20.0}     # 1/4 弦后掠；范围保守以避面元退化
+  wing_dihedral_deg:   {lo: 0.0,   hi: 5.0}
+  wing_twist_deg:      {lo: -3.0,  hi: 0.0}      # 负 = 洗出(washout)
+  wing_x_fraction:     {lo: 0.25,  hi: 0.40}     # 机翼根前缘位置 = 比例 × 机身长
+  # ---- 平尾 ----
+  htail_volume_coeff:  {lo: 0.40,  hi: 0.65}
+  htail_aspect_ratio:  {lo: 3.5,   hi: 5.5}
+  htail_taper_ratio:   {lo: 0.4,   hi: 0.8}
+  htail_sweep_deg:     {lo: 0.0,   hi: 15.0}
+  # ---- 垂尾 ----
+  vtail_volume_coeff:  {lo: 0.030, hi: 0.045}
+  vtail_aspect_ratio:  {lo: 1.2,   hi: 2.2}
+  vtail_taper_ratio:   {lo: 0.4,   hi: 0.8}
+  vtail_sweep_deg:     {lo: 0.0,   hi: 25.0}
+  # ---- 螺旋桨 ----
+  # Phase 2.5 BEMT 校准：prop_diameter_m（绝对直径，0.20~1.00m）→ prop_diameter_factor（直径缩放系数）。
+  # 原因：BEMT 暴露了原设计空间「直径与任务推力需求脱耦」的系统性矛盾——
+  #   采样直径中位数 ≈ 功率反推推荐直径的 2 倍，D 与 MTOW/巡航推力不匹配：
+  #   轻任务(≈3kg)采样到 D>0.5 的桨 → 巡航效率崩塌(<0.38) → 预筛判「推力不足」；
+  #   重任务(≈30kg)采样到 D<0.25 的桨 → 推力严重不足。
+  # 修复：直径不再独立采样，而是作为「功率反推直径」的缩放系数
+  #   D = factor × 0.17·sqrt(P_max/n/100)，factor ∈ [0.7, 1.6]，
+  #   使桨盘直径始终与任务功率/推力匹配，同时保留设计自由度（±40% 探索）。
+  # 向后兼容：config 中的 prop_diameter_m（绝对直径）仍作为手动/demo 覆盖项。
+  prop_diameter_factor: {lo: 0.70,  hi: 1.60}
+  prop_rpm:            {lo: 4000.0, hi: 9000.0}
+
+discrete:
+  # 机翼根翼型（带弯度，24 个精选）
+  airfoil_root:
+    - clarky
+    - naca2410
+    - naca2412
+    - naca2415
+    - naca4412
+    - naca4415
+    - naca6412
+    - naca23012
+    - e193
+    - e197
+    - e205
+    - e212
+    - e214
+    - e387
+    - e420
+    - sd7032
+    - sd7037
+    - sd7062
+    - s7012
+    - s8036
+    - mh32
+    - mh45
+    - goe241
+    - raf32
+  # 机翼梢翼型（带弯度 24 + 对称 6，允许对称梢）
+  airfoil_tip:
+    - clarky
+    - naca2410
+    - naca2412
+    - naca2415
+    - naca4412
+    - naca4415
+    - naca6412
+    - naca23012
+    - e193
+    - e197
+    - e205
+    - e212
+    - e214
+    - e387
+    - e420
+    - sd7032
+    - sd7037
+    - sd7062
+    - s7012
+    - s8036
+    - mh32
+    - mh45
+    - goe241
+    - raf32
+    - naca0006
+    - naca0008
+    - n0012
+    - naca0010
+    - naca0015
+    - naca0018
+  # 螺旋桨数量 / 布局
+  n_props:      [1, 2, 3, 4]
+  prop_layout:  [nose, tail, wing, distributed]

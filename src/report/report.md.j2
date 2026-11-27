@@ -1,0 +1,99 @@
+# 无人机概念设计分析报告
+
+**Run ID:** `{{ run_id }}`
+**生成时间:** {{ generated_at }}
+**任务:** {{ mission.mission_name }}
+
+---
+
+## 1. 任务需求
+
+| 参数 | 数值 |
+|---|---|
+| 航程 | {{ "%.0f"|format(mission.range_km) }} km |
+| 巡航速度 | {{ "%.1f"|format(mission.cruise_speed_ms) }} m/s |
+| 载荷 | {{ "%.1f"|format(mission.payload_kg) }} kg |
+| 最大起飞重量 | {{ "%.1f"|format(ac.mtow_kg) }} kg |
+| 续航时间 | {{ "%.1f"|format(mission.endurance_h) }} h |
+| 飞行高度 | {{ "%.0f"|format(mission.altitude_m) }} m |
+
+## 2. 布局几何
+
+| 参数 | 主翼 | 平尾 | 垂尾 |
+|---|---|---|---|
+| 展长 (m) | {{ "%.2f"|format(ac.wing.span_m) }} | {{ "%.2f"|format(ac.htail.span_m) }} | {{ "%.2f"|format(ac.vtail.span_m) }} |
+| 面积 (m²) | {{ "%.2f"|format(ac.wing.area_m2) }} | {{ "%.3f"|format(ac.htail.area_m2) }} | {{ "%.3f"|format(ac.vtail.area_m2) }} |
+| 展弦比 | {{ "%.1f"|format(ac.wing.aspect_ratio) }} | {{ "%.1f"|format(ac.htail.aspect_ratio) }} | {{ "%.1f"|format(ac.vtail.aspect_ratio) }} |
+| 根弦 (m) | {{ "%.3f"|format(ac.wing.root_chord_m) }} | — | — |
+| 锥比 | {{ "%.2f"|format(ac.wing.taper_ratio) }} | {{ "%.2f"|format(ac.htail.taper_ratio) }} | {{ "%.2f"|format(ac.vtail.taper_ratio) }} |
+| 翼型 | {{ ac.wing.airfoil_root }} / {{ ac.wing.airfoil_tip }} | {{ ac.htail.airfoil }} | {{ ac.vtail.airfoil }} |
+
+| 重量与推进 | 数值 |
+|---|---|
+| MTOW | {{ "%.2f"|format(ac.mtow_kg) }} kg |
+| 空重 | {{ "%.2f"|format(ac.empty_mass_kg) }} kg |
+| 电池 | {{ "%.2f"|format(ac.battery_mass_kg) }} kg ({{ "%.0f"|format(ac.propulsion.battery_energy_wh) }} Wh) |
+| 电机 | {{ ac.propulsion.n_props }} × {{ "%.2f"|format(ac.propulsion.motor_power_kw) }} kW |
+| 螺旋桨 | {{ ac.propulsion.n_props }} × Ø{{ "%.2f"|format(ac.propulsion.prop_diameter_m) }} m |
+| 翼载 | {{ "%.1f"|format(ac.wing_loading_kg_m2) }} kg/m² |
+| 机身长/径 | {{ "%.2f"|format(ac.fuselage.length_m) }} / {{ "%.2f"|format(ac.fuselage.max_diameter_m) }} m |
+| 尾容量 Vh / Vv | {{ "%.3f"|format(ac.htail_volume_coeff) }} / {{ "%.3f"|format(ac.vtail_volume_coeff) }} |
+
+![三视图](fig_layout.png)
+
+## 3. 气动性能
+
+| 参数 | 数值 |
+|---|---|
+| CLα | {{ "%.2f"|format(aero.CL_alpha_per_rad) }} /rad |
+| CL₀ | {{ "%.3f"|format(aero.CL_alpha_0deg) }} |
+| CD₀ (VLM 拟合) | {{ "%.4f"|format(aero.CD0) }} |
+| CD₀ 寄生 (组件叠加) | {{ "%.5f"|format(perf.cd_parasitic_cruise) }} |
+| 诱导因子 k (拟合) | {{ "%.4f"|format(aero.k_induced) }} |
+| 最大升阻比 | {{ "%.1f"|format(aero.LD_max) }} @ α = {{ "%.1f"|format(aero.alpha_LDmax_deg) }}° |
+| Cmα (关于重心) | {{ "%.3f"|format(aero.Cm_alpha_per_rad) }} /rad |
+{% if polar %}
+| 翼型 2D CLmax | {{ "%.2f"|format(polar.cl_max) }} @ α = {{ "%.1f"|format(polar.alpha_stall_deg) }}° (Re = {{ "%.2e"|format(polar.reynolds) }}) |
+{% endif %}
+
+![升力线](fig_lift_curve.png)
+![极曲线](fig_drag_polar.png)
+
+## 4. 飞行性能
+
+| 参数 | 数值 |
+|---|---|
+| 失速速度 | {{ "%.1f"|format(perf.v_stall_ms) }} m/s |
+| 巡航攻角 | {{ "%.1f"|format(perf.alpha_cruise_deg) }}° |
+| 巡航 CL / CD | {{ "%.3f"|format(perf.CL_cruise) }} / {{ "%.4f"|format(perf.CD_cruise) }} |
+| 巡航升阻比 | {{ "%.1f"|format(perf.LD_cruise) }} |
+| 阻力分解 (诱导/寄生/波阻) | {{ "%.4f"|format(perf.cd_induced_cruise) }} / {{ "%.4f"|format(perf.cd_parasitic_cruise) }} / {{ "%.4f"|format(perf.cd_wave_cruise) }} |
+| 巡航阻力 | {{ "%.1f"|format(perf.drag_cruise_n) }} N |
+| 巡航电功率 | {{ "%.0f"|format(perf.power_cruise_w) }} W |
+| 可用电功率 | {{ "%.0f"|format(perf.power_available_w) }} W |
+| 需用推力 / 可用推力 | {{ "%.1f"|format(perf.thrust_required_n) }} / {{ "%.1f"|format(perf.thrust_available_n) }} N |
+| 螺旋桨效率 / 电机效率 | {{ "%.2f"|format(perf.propeller_efficiency) }} / {{ "%.2f"|format(perf.motor_efficiency) }} |
+| 推重比 | {{ "%.2f"|format(perf.thrust_weight_ratio) }} |
+| 航程 | {{ "%.0f"|format(perf.range_km) }} km |
+| 续航 | {{ "%.1f"|format(perf.endurance_h) }} h |
+| 爬升率 | {{ "%.1f"|format(perf.climb_rate_ms) }} m/s |
+| 静稳定裕度 | {{ "%.3f"|format(perf.static_margin) }} (CG {{ "%.2f"|format(perf.cg_x_m) }} m, NP {{ "%.2f"|format(perf.neutral_point_x_m) }} m) |
+
+## 5. 约束校核
+
+| 约束 | 结果 | 详情 |
+|---|---|---|
+{% for name, c in perf.constraints_pass.items() %}
+| {{ name }} | {{ "✅" if c.pass else "❌" }} | {{ c.detail }} |
+{% endfor %}
+
+## 6. 设计说明
+
+- 气动数据来源：VSPAero 涡格法（全机薄面元，α 扫描 {{ aero.alpha_deg|length }} 点），翼型 2D 数据来自 XFOIL（粘性）。
+- 阻力分解：CD_total = CD_induced(VLM) + CD_parasitic(组件叠加法) + CD_wave(亚声速≈0)。
+- 推进闭环：PropulsionModel 动量理论快速模型（螺旋桨/电机/电池），含推力/功率/能耗。
+- 概念设计阶段方法固有局限：涡格法不含粘性分离（失速由翼型 2D 数据估计）。
+- 三维模型见 `{{ artifacts.vsp3 if artifacts.vsp3 else "aircraft.vsp3" }}`（可用 OpenVSP vspviewer 打开），STL: `{{ artifacts.stl if artifacts.stl else "未导出" }}`。
+
+---
+*由 AI-UAV 无人机快速概念设计平台自动生成*

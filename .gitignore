@@ -1,0 +1,114 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+*.egg
+
+# 虚拟环境
+venv/
+.venv/
+env/
+.env/
+
+# 测试与缓存
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# IDE / 编辑器
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OpenVSP 生成产物（三维模型、网格、导出）
+*.vsp3
+*.stl
+*.step
+*.stp
+*.iges
+*.igs
+
+# 数据库与数据集（大体积，走项目网盘 tdrive 管理）
+*.db
+*.sqlite
+*.sqlite3
+*.dat
+
+# UIUC 翼型库（大目录，走项目网盘）
+uiuc/
+airfoil_db/
+airfoils/
+
+# 数据与缓存目录
+data/
+dataset/
+datasets/
+vsp3/
+mesh/
+meshes/
+tmp/
+temp/
+cache/
+
+# 运行日志
+logs/
+log/
+*.log
+
+# 中间产物 / 报告输出（历史分析结果，非源码）
+reports/
+output/
+outputs/
+results/
+result/
+
+# 压缩包
+*.zip
+*.7z
+*.rar
+*.tar
+*.gz
+*.bz2
+*.xz
+
+# 序列化 / 模型产物
+*.npz
+*.npy
+*.h5
+*.hdf5
+*.pkl
+*.joblib
+*.onnx
+*.pt
+*.pth
+*.bin
+
+# 图片与文档产物
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.bmp
+*.tif
+*.tiff
+*.pdf
+*.pptx
+*.docx
+*.xlsx
+
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 工作区记忆（本地助手工作记录，非项目代码）
+.workbuddy/

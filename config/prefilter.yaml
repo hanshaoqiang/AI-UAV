@@ -1,0 +1,24 @@
+# 可行性预筛阈值（Phase 2.5，禁止硬编码）
+#
+# 预筛在正式 OpenVSP/XFOIL/VSPAero 分析之前运行，纯 Python、无外部工具调用。
+# 区分硬约束与软约束：
+#   hard: 不满足 → 提前过滤（feasible=False），记录过滤原因与具体指标
+#   soft: 不满足 → 记录 warning，不删除样本
+#
+# 阈值取物理合理范围，避免过度压缩设计空间。
+
+hard:
+  # 硬约束仅保留「可靠预测完整分析失败」的规则（C1.2 误杀验证：推力不足 / 推重比不足）
+  thrust_margin_min: 1.0             # 可用推力 / 巡航所需推力 下限（≥1 才能平飞）
+  thrust_weight_ratio_min: 0.08      # 推重比下限（与 validation.yaml 的推力校验一致）
+
+soft:
+  # 桨尖速度降级为软约束（C1.2 误杀验证：设计转速是推进求解上限，实际工作转速被节流下调，
+  # π·n_design·D 高估实际桨尖速度，作为硬约束会误杀实际可行设计；保留为告警）
+  tip_speed_warn_ms: 220.0           # 桨尖速度告警 [m/s]（约 0.65 马赫）
+  # 桨盘载荷降级为软约束（C1.2 误杀验证：按电机最大功率计，实际巡航功率远低于最大功率，
+  # 且完整分析验证不检查盘载荷，单独硬过滤会误杀；保留为告警）
+  disk_loading_warn_w_m2: 4000.0     # 桨盘载荷告警 [W/m²]（单桨轴功率 / 桨盘面积）
+  range_ratio_warn: 1.0              # 预估航程 / 任务航程 低于此值 → warning
+  thrust_weight_ratio_warn: 0.12     # 预估推重比 低于此值 → warning
+  v_stall_to_cruise_warn: 0.60       # 失速速度 / 巡航速度 高于此值 → warning（低速裕度不足）
